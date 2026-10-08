@@ -1,0 +1,82 @@
+:root {
+  --bg: #f6f7f9; --panel: #fff; --text: #1b1f24; --muted: #667085; --line: #e3e6ea;
+  --accent: #2f6fdb; --accent-text: #fff; --mine: #2f6fdb; --mine-text: #fff;
+  --bad: #b42318; --bad-bg: #fde7e5;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418; --panel: #191d23; --text: #e6e8eb; --muted: #98a2b3; --line: #2a3038;
+    --accent: #7aa7ff; --accent-text: #0b1220; --mine: #2f5fb8; --mine-text: #f2f5fb;
+    --bad: #f87171; --bad-bg: #3a1614;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body { font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", sans-serif; }
+main { max-width: 760px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+h1 { font-size: 20px; margin: 0; }
+h2 { font-size: 18px; margin: 0 0 8px; }
+p { margin: 8px 0; }
+button {
+  font: inherit; padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--text); cursor: pointer;
+}
+button:disabled { opacity: .5; cursor: default; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+button.danger { color: var(--bad); }
+button.link { border: 0; background: none; color: var(--accent); padding: 8px 0; }
+.muted { color: var(--muted); font-size: 14px; }
+.note { color: var(--bad); font-size: 14px; min-height: 1em; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+.card {
+  margin: 12vh 16px 0; padding: 24px 20px; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 16px;
+}
+.code {
+  font: 600 28px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em;
+  padding: 12px 0; user-select: all;
+}
+.code.small { font-size: 16px; padding: 0; }
+
+.bar {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--line);
+}
+.bar button { padding: 6px 12px; }
+.thread { flex: 1; padding: 8px 16px; }
+.messages { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 88%; display: flex; flex-direction: column; }
+.msg .text {
+  padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; overflow-wrap: anywhere;
+  background: var(--panel); border: 1px solid var(--line);
+}
+.msg.user { align-self: flex-end; align-items: flex-end; }
+.msg.user .text { background: var(--mine); color: var(--mine-text); border-color: var(--mine); }
+.msg.user .text a { color: inherit; }
+.msg.assistant { align-self: flex-start; }
+.msg.pending .text:empty::after { content: "…"; color: var(--muted); }
+.msg.failed .text { border-color: var(--bad); background: var(--bad-bg); }
+.msg time { font-size: 12px; color: var(--muted); margin: 2px 6px 0; }
+.msg a { color: var(--accent); }
+
+.dock {
+  position: sticky; bottom: 0; padding: 8px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg); border-top: 1px solid var(--line);
+}
+.status { color: var(--muted); font-size: 14px; margin: 0 0 6px; min-height: 1em; }
+.composer textarea {
+  width: 100%; resize: vertical; min-height: 52px; max-height: 40vh; font: inherit; padding: 10px 12px;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+}
+.composer .row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+.counter { font-size: 12px; color: var(--muted); }
+.counter.over { color: var(--bad); }
+
+.sheet {
+  border: 1px solid var(--line); border-radius: 16px; padding: 20px; width: min(92vw, 440px);
+  background: var(--panel); color: var(--text);
+}
+.sheet::backdrop { background: rgb(0 0 0 / .4); }
