@@ -9,8 +9,10 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 const USER = '1b4e28ba-2fa1-41d2-883f-0016d3cca427'
 const JOB = '2e6fa396-5cb2-4038-a272-5116e4df7384'
-const REPLY = ['Apple의 container는 ', 'Mac에서 Linux 컨테이너를 ', '가벼운 VM으로 돌리는 도구예요. ',
-  '출처: https://github.com/apple/container.']
+const REPLY = ['## Apple container\n\n**Apple의 container**는 Mac에서 Linux 컨테이너를 ',
+  '*가벼운 VM*으로 돌리는 도구예요.\n\n1. 컨테이너마다 VM 하나\n   - 커널을 따로 씀\n   - `container run`으로 시작\n2. ',
+  'OCI 이미지 사용\n\n| 항목 | 값 |\n|:--|--:|\n| 메모리 | 512MB |\n| CPU | 2 |\n\n```sh\ncontainer run --rm -it alpine sh\n```\n\n',
+  '> 인용 예시\n\n출처: [apple/container](https://github.com/apple/container)']
 
 type Next = () => void
 

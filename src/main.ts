@@ -1,6 +1,6 @@
 import './frame-guard.ts'
 import { Agent, AgentError, ApprovalRequired, HISTORY_PAGE_SIZE, MAX_TEXT, type Message } from './agent.ts'
-import { el, richText } from './dom.ts'
+import { el, markdown, richText } from './dom.ts'
 import { follow } from './poll.ts'
 import { clearDeviceData, server } from './server/index.ts'
 import { PasskeyCancelled, passkeySupported, registerPasskey, signInWithPasskey } from './server/passkey.ts'
@@ -97,8 +97,9 @@ async function chat(activeJob: string | null): Promise<void> {
   const scrollDown = () => window.scrollTo({ top: document.body.scrollHeight })
 
   function bubble(m: { role: 'user' | 'assistant'; text: string; atMs?: number }): HTMLElement {
-    const body = el('div', { class: 'text' })
-    richText(body, m.text)
+    const body = el('div', { class: m.role === 'assistant' ? 'text md' : 'text' })
+    if (m.role === 'assistant') markdown(body, m.text)
+    else richText(body, m.text)
     const time = m.atMs ? el('time', {}, new Date(m.atMs).toLocaleString('ko-KR', {
       month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
     })) : null
@@ -142,12 +143,12 @@ async function chat(activeJob: string | null): Promise<void> {
       const last = await follow(agent, job, piece => {
         const stick = nearBottom()
         text += piece
-        richText(body, text)
+        markdown(body, text)
         if (stick) scrollDown()
       })
       if (last.status === 'failed') {
         item.classList.add('failed')
-        richText(body, text ? `${text}\n\n(${last.error ?? '응답에 실패했어요'})` : (last.error ?? '응답에 실패했어요'))
+        markdown(body, text ? `${text}\n\n(${last.error ?? '응답에 실패했어요'})` : (last.error ?? '응답에 실패했어요'))
       }
       status.textContent = ''
     } catch (e) {

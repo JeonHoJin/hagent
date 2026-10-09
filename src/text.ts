@@ -7,10 +7,11 @@
 export interface Segment { text: string; href?: string }
 
 const URLISH = /https:\/\/[^\s<>"'`]+/g
+const URL_AT = /https:\/\/[^\s<>"'`]+/y
 /** Punctuation that usually ends a sentence rather than the URL. */
 const TRAILING = /[.,;:!?)\]}'"」』】]+$/
 
-function safeHref(candidate: string): string | undefined {
+export function safeHref(candidate: string): string | undefined {
   try {
     const url = new URL(candidate)
     if (url.protocol !== 'https:' || url.username || url.password || !url.hostname.includes('.')) return undefined
@@ -18,6 +19,16 @@ function safeHref(candidate: string): string | undefined {
   } catch {
     return undefined
   }
+}
+
+/** The safe https link starting exactly at `at`, if there is one. */
+export function linkAt(text: string, at: number): { text: string; href: string; end: number } | undefined {
+  URL_AT.lastIndex = at
+  const match = URL_AT.exec(text)
+  if (!match) return undefined
+  const url = match[0].replace(TRAILING, '')
+  const href = safeHref(url)
+  return href ? { text: url, href, end: at + url.length } : undefined
 }
 
 export function segments(text: string): Segment[] {
