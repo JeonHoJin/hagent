@@ -4,11 +4,18 @@ import { el, markdown, richText } from './dom.ts'
 import { follow } from './poll.ts'
 import { clearDeviceData, server } from './server/index.ts'
 import { PasskeyCancelled, passkeySupported, registerPasskey, signInWithPasskey } from './server/passkey.ts'
+import { openRoutines } from './routines-view.ts'
 
 const app = document.getElementById('app')!
 const agent = new Agent(server)
+/** Set by the chat screen: catches up when the app comes back into view. */
+let onVisible: (() => void) | null = null
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') onVisible?.()
+})
 
 function show(...nodes: Node[]): void {
+  onVisible = null
   app.replaceChildren(...nodes)
 }
 
@@ -91,19 +98,23 @@ async function chat(activeJob: string | null): Promise<void> {
   const counter = el('span', { class: 'counter' })
   const send = el('button', { class: 'primary', type: 'submit' }, '보내기')
   let oldest: number | undefined
+  /** The newest message id on screen, or null when the screen may be behind the server. */
+  let newest: number | null = null
   let running = false
+  let refreshing = false
 
   const nearBottom = () => window.innerHeight + window.scrollY >= document.body.scrollHeight - 80
   const scrollDown = () => window.scrollTo({ top: document.body.scrollHeight })
 
-  function bubble(m: { role: 'user' | 'assistant'; text: string; atMs?: number }): HTMLElement {
+  function bubble(m: { role: 'user' | 'assistant'; text: string; atMs?: number; routine?: string | null }): HTMLElement {
     const body = el('div', { class: m.role === 'assistant' ? 'text md' : 'text' })
     if (m.role === 'assistant') markdown(body, m.text)
     else richText(body, m.text)
     const time = m.atMs ? el('time', {}, new Date(m.atMs).toLocaleString('ko-KR', {
       month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit',
     })) : null
-    return el('li', { class: `msg ${m.role}` }, body, time)
+    const label = m.routine ? el('span', { class: 'tag' }, `⏰ ${m.routine}`) : null
+    return el('li', { class: `msg ${m.role}` }, label, body, time)
   }
 
   function update(): void {
@@ -117,6 +128,7 @@ async function chat(activeJob: string | null): Promise<void> {
     older.disabled = true
     try {
       const page: Message[] = await agent.history(oldest)
+      if (oldest === undefined) newest = page.at(-1)?.id ?? null
       if (page.length) oldest = page[0]!.id
       const first = list.firstChild
       for (const m of page) list.insertBefore(bubble(m), first)
@@ -157,9 +169,51 @@ async function chat(activeJob: string | null): Promise<void> {
       status.textContent = errorText(e)
     } finally {
       item.classList.remove('pending')
+      // The bubbles just added carry no ids; the next refresh redraws from the server.
+      newest = null
       running = false
       update()
     }
+  }
+
+  /**
+   * Catches up with what happened while the app was away (a routine may have run): redraws
+   * the newest page if it changed and follows a job still in progress.
+   */
+  async function refresh(): Promise<void> {
+    if (running || refreshing) return
+    refreshing = true
+    try {
+      const [page, now] = await Promise.all([agent.history(), agent.status()])
+      const last = page.at(-1)?.id ?? null
+      if (last !== newest) {
+        const stick = nearBottom()
+        list.replaceChildren(...page.map(bubble))
+        oldest = page[0]?.id
+        newest = last
+        older.hidden = page.length < HISTORY_PAGE_SIZE
+        if (stick) scrollDown()
+      }
+      const job = now.job && (now.job.status === 'queued' || now.job.status === 'running') ? now.job.id : null
+      refreshing = false
+      if (job && !running) {
+        scrollDown()
+        await stream(job)
+      }
+    } catch (e) {
+      if (e instanceof ApprovalRequired) return waiting()
+      status.textContent = errorText(e)
+    } finally {
+      refreshing = false
+    }
+  }
+
+  function routines(): void {
+    openRoutines(agent, {
+      ran: () => { newest = null; void refresh() },
+      approvalLost: waiting,
+      errorText,
+    })
   }
 
   const form = el('form', {
@@ -191,10 +245,13 @@ async function chat(activeJob: string | null): Promise<void> {
   older.addEventListener('click', () => void loadOlder())
 
   show(
-    el('header', { class: 'bar' }, el('h1', {}, 'hagent'), el('button', { type: 'button', onclick: settings }, '설정')),
+    el('header', { class: 'bar' }, el('h1', {}, 'hagent'), el('div', { class: 'tools' },
+      el('button', { type: 'button', onclick: routines }, '루틴'),
+      el('button', { type: 'button', onclick: settings }, '설정'))),
     el('section', { class: 'thread' }, older, list),
     el('footer', { class: 'dock' }, status, form),
   )
+  onVisible = () => void refresh()
   update()
   await loadOlder()
   scrollDown()

@@ -11,16 +11,20 @@ const withSlashes = (p: string) => `/${p.replace(/^\/+|\/+$/g, '')}/`.replace('/
 /**
  * The page's policy, added at build time only (the dev server needs its own scripts). The
  * origin is shared with other apps, so 'self' would let any of their files run here: scripts
- * and styles may come only from this app's assets folder, nothing may be framed or posted,
- * and Trusted Types refuse every HTML/script sink (the app builds the DOM from text).
+ * and styles may come only from this app's assets folder, the service worker and manifest
+ * only from this app's own files, nothing may be framed or posted, and Trusted Types refuse
+ * every HTML/script sink (the app builds the DOM from text).
  */
 function csp(base: string): Plugin {
-  const assets = `${ORIGIN}${base}assets/`
+  const app = `${ORIGIN}${base}`
+  const assets = `${app}assets/`
   const policy = [
     "default-src 'none'",
     `script-src ${assets}`,
     `style-src ${assets}`,
-    'img-src data:',
+    `img-src data: ${app}icons/`,
+    `manifest-src ${app}manifest.webmanifest`,
+    `worker-src ${app}sw.js`,
     `connect-src ${CONNECT}`,
     "object-src 'none'",
     "base-uri 'none'",
