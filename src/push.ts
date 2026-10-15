@@ -5,10 +5,19 @@
  */
 import type { Agent } from './agent.ts'
 import { fromBase64url } from './server/client.ts'
+import { workerScriptURL, type WorkerURLFactory } from './worker-url.ts'
 
 /** /hagent/ in production; the worker controls only this app's pages. */
 const SCOPE = import.meta.env.BASE_URL
 const WORKER = `${SCOPE}sw.js`
+let workerURL: unknown
+
+export class PushSetupError extends Error {
+  constructor(message: string, cause: unknown) {
+    super(message, { cause })
+    this.name = 'PushSetupError'
+  }
+}
 
 export type PushState =
   | 'unsupported' // this browser cannot receive web push
@@ -57,8 +66,16 @@ export async function enablePush(agent: Agent): Promise<PushState> {
   if (!supported()) return pushState()
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') return permission === 'denied' ? 'denied' : 'off'
-  const reg = await navigator.serviceWorker.register(WORKER, { scope: SCOPE, updateViaCache: 'none' })
-  await navigator.serviceWorker.ready
+  let reg: ServiceWorkerRegistration
+  try {
+    workerURL ??= workerScriptURL(new URL(WORKER, location.href).href,
+      (window as Window & { trustedTypes?: WorkerURLFactory }).trustedTypes)
+    // lib.dom does not yet declare TrustedScriptURL. The runtime object stays intact.
+    reg = await navigator.serviceWorker.register(workerURL as string, { scope: SCOPE, updateViaCache: 'none' })
+    await navigator.serviceWorker.ready
+  } catch (e) {
+    throw new PushSetupError('알림 기능을 준비하지 못했어요. 앱을 닫았다 다시 열어 주세요. (서비스 워커 등록)', e)
+  }
   const key = new Uint8Array(fromBase64url(await agent.pushKey()))
   let sub = await reg.pushManager.getSubscription()
   // A subscription made for another server key can no longer receive anything.
@@ -66,7 +83,11 @@ export async function enablePush(agent: Agent): Promise<PushState> {
     await sub.unsubscribe()
     sub = null
   }
-  sub ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key })
+  try {
+    sub ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key })
+  } catch (e) {
+    throw new PushSetupError('기기의 푸시 알림을 등록하지 못했어요. 알림 권한과 네트워크를 확인해 주세요. (푸시 구독)', e)
+  }
   await agent.pushSubscribe(sub.toJSON())
   return 'on'
 }

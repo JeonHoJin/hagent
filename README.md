@@ -19,7 +19,7 @@ GitHub Pages에는 정적 파일만 올라가고, 대화는 공개 게이트웨�
   - 스크립트와 스타일은 이 앱의 `assets/` 경로에서만 받는다. 같은 origin의 다른 앱 파일은 쓰지 않는다.
   - 연결은 게이트웨이로만 한다.
   - `object-src`, `base-uri`, `form-action`은 막는다.
-  - Trusted Types(`require-trusted-types-for 'script'`, `trusted-types 'none'`)를 쓴다.
+  - Trusted Types(`require-trusted-types-for 'script'`)를 쓰며, `hagent-worker` 정책은 앱의 정확한 서비스 워커 URL만 허용한다. HTML·스크립트 문자열은 허용하지 않는다.
   - 페이지는 `no-referrer`다.
 - **frame-buster**: Pages는 `X-Frame-Options`를 보낼 수 없으므로, 프레임 안에서 열리면 스스로 비우고 최상위 창을 이 주소로 옮긴다.
 - **서버 응답은 믿지 않는다.**

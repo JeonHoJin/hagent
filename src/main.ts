@@ -5,6 +5,7 @@ import { follow } from './poll.ts'
 import { clearDeviceData, server } from './server/index.ts'
 import { PasskeyCancelled, passkeySupported, registerPasskey, signInWithPasskey } from './server/passkey.ts'
 import { openRoutines } from './routines-view.ts'
+import { PushSetupError } from './push.ts'
 
 const app = document.getElementById('app')!
 const agent = new Agent(server)
@@ -24,7 +25,7 @@ function accountCode(): string {
 }
 
 function errorText(e: unknown): string {
-  if (e instanceof PasskeyCancelled || e instanceof AgentError || e instanceof ApprovalRequired) return e.message
+  if (e instanceof PasskeyCancelled || e instanceof AgentError || e instanceof ApprovalRequired || e instanceof PushSetupError) return e.message
   if (e instanceof TypeError) return '서버에 연결하지 못했어요. 네트워크를 확인해 주세요.'
   return e instanceof Error && e.message ? e.message : '알 수 없는 문제가 생겼어요.'
 }

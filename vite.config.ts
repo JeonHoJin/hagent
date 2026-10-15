@@ -13,7 +13,7 @@ const withSlashes = (p: string) => `/${p.replace(/^\/+|\/+$/g, '')}/`.replace('/
  * origin is shared with other apps, so 'self' would let any of their files run here: scripts
  * and styles may come only from this app's assets folder, the service worker and manifest
  * only from this app's own files, nothing may be framed or posted, and Trusted Types refuse
- * every HTML/script sink (the app builds the DOM from text).
+ * every HTML/script sink except the exact worker URL (the app builds the DOM from text).
  */
 function csp(base: string): Plugin {
   const app = `${ORIGIN}${base}`
@@ -30,7 +30,7 @@ function csp(base: string): Plugin {
     "base-uri 'none'",
     "form-action 'none'",
     "require-trusted-types-for 'script'",
-    "trusted-types 'none'",
+    'trusted-types hagent-worker',
   ].join('; ')
   return {
     name: 'hagent-csp',
