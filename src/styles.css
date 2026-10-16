@@ -128,7 +128,8 @@ button.link { border: 0; background: none; color: var(--accent); padding: 8px 0;
 .routine-form { display: flex; flex-direction: column; gap: 12px; margin: 12px 0; }
 .routine-form .field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
 .routine-form input[type=text], .routine-form input[type=time], .routine-form textarea {
-  font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line);
+  /* iOS zooms focused fields below 16px, and can keep that zoom after dialog close. */
+  font: inherit; font-size: 16px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line);
   background: var(--bg); color: var(--text); width: 100%;
 }
 .routine-form textarea { resize: vertical; }
